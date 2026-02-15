@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bizim Hikayemiz ❤️</title>
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+    background:black;
+    font-family:Arial;
+}
+canvas{ display:block; }
+
+#startScreen,#endScreen{
+    position:absolute;
+    width:100%;
+    height:100%;
+    background:black;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    z-index:10;
+    text-align:center;
+}
+
+button{
+    padding:15px 30px;
+    font-size:18px;
+    border:none;
+    border-radius:10px;
+    background:#ff4d6d;
+    color:white;
+}
+</style>
+</head>
+<body>
+
+<div id="startScreen">
+    <h2>Hazır mısın aşkım? ❤️</h2>
+    <button onclick="startGame()">Başlat</button>
+</div>
+
+<div id="endScreen" style="display:none;">
+    <h1 id="finalMessage"></h1>
+</div>
+
+<canvas id="game"></canvas>
+
+<audio id="bgMusic" loop>
+<source src="muzik.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+
+const girlName = "CEREN"; // adını yaz
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let playerImg = new Image();
+playerImg.src = "ben.png";
+
+let backgrounds = [];
+["foto1.jpg","foto2.jpg","foto3.jpg"].forEach(src=>{
+    let img = new Image();
+    img.src = src;
+    backgrounds.push(img);
+});
+
+let player = { x:50, y:canvas.height-150, size:110 };
+let hearts = [];
+let texts = [];
+let score = 0;
+let currentBg = 0;
+let fireworks = [];
+
+function createHeart(){
+    hearts.push({
+        x: Math.random() * (canvas.width-60),
+        y: -50,
+        size:50
+    });
+}
+setInterval(createHeart, 1600);
+
+function drawHeart(x,y,size){
+    ctx.fillStyle="red";
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.bezierCurveTo(x - size/2, y - size/2,
+                      x - size, y + size/3,
+                      x, y + size);
+    ctx.bezierCurveTo(x + size, y + size/3,
+                      x + size/2, y - size/2,
+                      x, y);
+    ctx.fill();
+}
+
+function createLoveText(x,y){
+    texts.push({
+        x:x,
+        y:y,
+        opacity:1,
+        size:20 + Math.random()*15
+    });
+}
+
+function drawTexts(){
+    texts.forEach((t,i)=>{
+        t.y -= 1.5;
+        t.opacity -= 0.01;
+        ctx.globalAlpha = t.opacity;
+        ctx.fillStyle="white";
+        ctx.font = t.size+"px Arial";
+        ctx.fillText("Seni Seviyorum ❤️", t.x, t.y);
+        ctx.globalAlpha = 1;
+
+        if(t.opacity<=0){
+            texts.splice(i,1);
+        }
+    });
+}
+
+function drawBackground(){
+    if(backgrounds[currentBg]){
+        ctx.drawImage(backgrounds[currentBg],0,0,canvas.width,canvas.height);
+    }
+}
+
+function drawPlayer(){
+    ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
+}
+
+function drawHearts(){
+    hearts.forEach((h,i)=>{
+        h.y += 2.5;
+        drawHeart(h.x, h.y, h.size);
+
+        if(
+            player.x < h.x + h.size &&
+            player.x + player.size > h.x - h.size/2 &&
+            player.y < h.y + h.size &&
+            player.y + player.size > h.y - h.size/2
+        ){
+            createLoveText(h.x, h.y);
+            hearts.splice(i,1);
+            score++;
+
+            if(score % 5 === 0){
+                currentBg = (currentBg+1) % backgrounds.length;
+            }
+
+            if(score === 20){
+                endGame();
+            }
+        }
+    });
+}
+
+function createFirework(){
+    for(let i=0;i<150;i++){
+        fireworks.push({
+            x: canvas.width/2,
+            y: canvas.height/2,
+            dx:(Math.random()-0.5)*14,
+            dy:(Math.random()-0.5)*14,
+            life:120,
+            color:`hsl(${Math.random()*360},100%,50%)`
+        });
+    }
+}
+
+function drawFireworks(){
+    fireworks.forEach((f,i)=>{
+        ctx.fillStyle=f.color;
+        f.x+=f.dx;
+        f.y+=f.dy;
+        f.life--;
+        ctx.fillRect(f.x,f.y,4,4);
+        if(f.life<=0){
+            fireworks.splice(i,1);
+        }
+    });
+}
+
+function gameLoop(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawBackground();
+    drawPlayer();
+    drawHearts();
+    drawTexts();
+    drawFireworks();
+    requestAnimationFrame(gameLoop);
+}
+
+document.addEventListener("keydown",e=>{
+    if(e.key==="ArrowRight") player.x+=30;
+    if(e.key==="ArrowLeft") player.x-=30;
+});
+
+canvas.addEventListener("touchmove",e=>{
+    player.x = e.touches[0].clientX - player.size/2;
+});
+
+function startGame(){
+    document.getElementById("startScreen").style.display="none";
+    document.getElementById("bgMusic").play();
+    gameLoop();
+}
+
+function endGame(){
+    createFirework();
+    document.getElementById("endScreen").style.display="flex";
+    document.getElementById("finalMessage").innerText =
+    girlName + ", sana ulaşmak hayatımdaki en güzel şey. Seni sonsuza kadar seveceğim ❤️";
+}
+
+</script>
+
+</body>
+</html>
